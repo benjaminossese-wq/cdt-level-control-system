@@ -1,0 +1,170 @@
+1. Propósito
+
+Este documento establece los criterios técnicos para el análisis de la señal de control generada por un controlador PID en sistemas industriales, con el objetivo de evaluar su calidad operativa, detectar anomalías y generar recomendaciones en un entorno de Gemelo Digital Cognitivo (CDT).
+
+2. Variables de entrada
+
+El análisis de la señal de control debe considerar las siguientes variables:
+
+𝑢
+(
+𝑡
+)
+u(t): señal de control [%]
+ℎ
+(
+𝑡
+)
+h(t): variable de proceso (nivel)
+𝑆
+𝑃
+SP: setpoint
+Tiempo de simulación
+Ruido presente en la medición
+3. Criterios de evaluación de la señal de control
+3.1 Rango operativo
+Normal: 20% ≤ u(t) ≤ 90%
+Precaución: u(t) cercano a saturación (≥ 90% o ≤ 10%)
+Alerta: saturación persistente (≈ 100% o 0%)
+
+Interpretación:
+
+Saturación indica que el sistema está forzado
+Puede existir desbalance entre entrada y salida (Qin vs Qout)
+3.2 Variabilidad (ruido en la señal)
+
+Evaluar la dispersión de la señal de control:
+
+Baja variabilidad (Normal): señal suave, sin oscilaciones bruscas
+Media variabilidad (Precaución): oscilaciones moderadas
+Alta variabilidad (Alerta): señal altamente ruidosa o errática
+
+Indicadores:
+
+Alta frecuencia de cambios
+Picos abruptos
+Señal “granulada” o inestable
+
+Posibles causas:
+
+Ruido en sensor
+Ganancia derivativa alta (Kd elevado)
+Falta de filtrado
+3.3 Oscilaciones
+Normal: sin oscilaciones persistentes
+Precaución: oscilaciones amortiguadas
+Alerta: oscilaciones sostenidas
+
+Interpretación:
+
+Oscilaciones indican mala sintonización del PID
+Puede existir exceso de Kp o Kd
+3.4 Esfuerzo de control
+
+Evaluar si el sistema requiere esfuerzo excesivo:
+
+Normal: señal estable con variaciones controladas
+Precaución: señal con actividad elevada
+Alerta: señal agresiva o altamente fluctuante
+
+Importante:
+Un sistema puede estar estable en nivel pero ser ineficiente en control.
+
+4. Relación con la variable de proceso
+
+El análisis NO debe basarse solo en estabilidad del nivel.
+
+El sistema debe evaluar:
+
+Condición	Interpretación
+Nivel estable + control suave	Sistema óptimo
+Nivel estable + control ruidoso	Sistema funcional pero ineficiente
+Nivel inestable + control agresivo	Sistema mal sintonizado
+Nivel no alcanza SP + control saturado	Falta de capacidad
+5. Clasificación del estado del sistema
+
+El LLM debe clasificar el sistema considerando ambas variables:
+
+🟢 NORMAL
+Nivel alcanza SP correctamente
+Error estacionario bajo
+Señal de control estable
+Sin saturación
+🟡 PRECAUCIÓN
+Nivel estable PERO:
+Señal de control ruidosa
+Alta variabilidad
+Cercanía a saturación
+Sistema funcional pero mejorable
+🔴 ALERTA
+Saturación persistente
+Oscilaciones sostenidas
+Nivel no alcanza SP
+Control inestable o errático
+6. Reglas cognitivas para el LLM
+
+El modelo debe aplicar las siguientes reglas:
+
+Regla 1
+
+Si:
+
+Nivel estable
+Error ≈ 0
+PERO señal de control con alta variabilidad
+
+Entonces:
+Clasificar como PRECAUCIÓN
+
+Regla 2
+
+Si:
+
+Control cercano a 100% durante periodos prolongados
+
+Entonces:
+Clasificar como ALERTA (saturación)
+
+Regla 3
+
+Si:
+
+Oscilaciones en nivel y control
+
+Entonces:
+Clasificar como ALERTA (inestabilidad)
+
+Regla 4
+
+Si:
+
+Nivel correcto
+Control suave
+
+Entonces:
+Clasificar como NORMAL
+
+7. Generación de recomendaciones
+
+El sistema debe sugerir acciones:
+
+Caso: señal ruidosa
+Reducir Kd
+Aplicar filtro (media móvil / filtro paso bajo)
+Caso: saturación
+Revisar capacidad del actuador
+Ajustar SP
+Evaluar modelo del sistema
+Caso: oscilaciones
+Reducir Kp
+Ajustar Ki
+Revisar sintonización completa
+8. Principio clave del CDT
+
+El Gemelo Digital Cognitivo NO debe evaluar solo estabilidad, sino:
+
+“La calidad del control y el esfuerzo requerido para mantener dicha estabilidad.”
+
+9. Ejemplo de salida esperada del LLM
+
+El sistema alcanza el setpoint de manera estable y sin error significativo. Sin embargo, la señal de control presenta alta variabilidad, lo que sugiere sensibilidad al ruido o una posible sobrerreacción del término derivativo. Se recomienda evaluar la reducción de Kd o la incorporación de filtrado en la señal de medición.

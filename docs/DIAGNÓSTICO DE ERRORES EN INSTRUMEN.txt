@@ -1,0 +1,94 @@
+DIAGNÓSTICO DE ERRORES EN INSTRUMENTACIÓN Y COMUNICACIONES
+ 
+Este documento describe los problemas más comunes en sistemas de control de nivel
+y cómo diagnosticarlos desde la capa cognitiva del Gemelo Digital.
+ 
+=== ERRORES DE SENSOR DE NIVEL ===
+ 
+1. LECTURA FUERA DE RANGO FÍSICO
+   Síntoma: El sensor reporta h > h_max (0.50 m) o h < 0
+   Causas probables:
+   - Sensor ultrasónico con eco falso (reflexión en pared o espuma)
+   - Sensor de presión hidrostática descalibrado (offset incorrecto)
+   - Cable dañado que introduce ruido eléctrico
+   - Sensor saturado (salida fija en 20 mA = valor máximo)
+   Acción: Marcar dato como inválido. No usar para control. Solicitar verificación física del sensor.
+ 
+2. LECTURA CONGELADA (NO CAMBIA)
+   Síntoma: El valor de nivel no varía durante múltiples muestras a pesar de que Qin ≠ Qout
+   Causas probables:
+   - Comunicación perdida (el último valor se mantiene en el buffer)
+   - Sensor desconectado físicamente
+   - Timeout en el protocolo de comunicación
+   Acción: Comparar timestamps. Si el dato tiene más de 5 segundos sin actualizar, considerarlo stale.
+ 
+3. RUIDO EXCESIVO
+   Síntoma: Fluctuaciones rápidas > 5% del rango (> 0.025 m) entre muestras consecutivas
+   Causas probables:
+   - Turbulencia en la superficie del estanque
+   - Interferencia electromagnética en el cableado del sensor
+   - Resolución insuficiente del ADC
+   Acción: Aplicar filtro de media móvil. Reducir Kd del PID. No confundir con cambio real de nivel.
+ 
+=== ERRORES DE COMUNICACIÓN ===
+ 
+1. MODBUS TCP/IP (Factory IO + OpenPLC)
+   Síntoma: Valores aleatorios, datos corrompidos, o timeouts frecuentes
+   Causas probables:
+   - Dirección IP incorrecta (debe ser 127.0.0.1 para localhost)
+   - Puerto Modbus bloqueado por firewall de Windows
+   - Registros Modbus mal mapeados (lectura de registro incorrecto)
+   - Conflicto de tipo de dato (se lee un registro de 16 bits como si fuera 32 bits)
+   Acción: Verificar mapeo de registros. Verificar que el cliente/servidor estén sincronizados.
+ 
+2. COMUNICACIÓN MATLAB/SIMULINK ↔ PYTHON
+   Síntoma: Datos desfasados, valores NaN, o errores de tipo
+   Causas probables:
+   - MATLAB Engine no está iniciado correctamente
+   - Variables del workspace de MATLAB no se actualizan a tiempo
+   - Error en la lectura de CSV (formato de número, separador decimal)
+   - Diferencia de unidades (Simulink trabaja en una unidad, Python espera otra)
+   Acción: Verificar que las variables se lean del workspace correcto. Verificar formato numérico.
+ 
+3. API ANYTHINGLLM
+   Síntoma: Respuestas vacías, errores HTTP, o timeout
+   Causas probables:
+   - API key inválida o expirada
+   - Workspace slug incorrecto en la URL
+   - Ollama no está corriendo (servicio caído)
+   - Prompt demasiado largo excede el contexto del modelo
+   Acción: Verificar conectividad con curl. Verificar que Ollama responde en localhost:11434.
+ 
+=== ERRORES DE ESCALAMIENTO ===
+ 
+Síntoma: Los valores tienen una forma correcta (suben y bajan apropiadamente) pero la magnitud es incorrecta.
+ 
+Ejemplo típico:
+- El sensor de nivel envía un valor analógico de 0-4095 (12 bits)
+- Este debe mapearse al rango 0-0.50 m
+- Si la conversión es incorrecta, un valor de 4095 podría leerse como 4.095 m en vez de 0.50 m
+ 
+Fórmula de escalamiento correcta:
+h_real = (valor_crudo / valor_max_crudo) × h_max
+h_real = (valor_crudo / 4095) × 0.50
+ 
+Señales de error de escalamiento:
+- Valores proporcionales al rango físico pero multiplicados por un factor constante
+- El patrón de la señal es correcto pero la amplitud es incorrecta
+- Ejemplo: si h reportado es 0.80 m pero h_max = 0.50 m, el factor podría ser 1.6x → posible error de conversión de unidades (ej: cm interpretados como m, o rango 0-1000 mapeado a 0-1 en vez de 0-0.5)
+ 
+Acción: Calcular el factor de error = h_reportado / h_max. Si es un número entero o fracción simple (2x, 10x, 0.1x), es casi seguro un error de escalamiento.
+ 
+=== TABLA DE DIAGNÓSTICO RÁPIDO ===
+ 
+| Síntoma | Diagnóstico más probable | Verificación |
+|---------|-------------------------|--------------|
+| h > 0.50 m | Error de escalamiento o sensor | Calcular factor h/h_max |
+| h < 0 | Sensor descalibrado (offset) | Verificar zero del sensor |
+| h no cambia nunca | Comunicación perdida | Verificar timestamp del dato |
+| h cambia pero Qin/Qout no | Sensor de flujo fallido | Comparar Qout teórico vs reportado |
+| Qin < Qout pero nivel sube | Datos inconsistentes | Error de software o sensor |
+| Qin > Qout pero nivel baja | Datos inconsistentes | Fuga no modelada o error |
+| Valores alternando 0 y máximo | Ruido eléctrico / cable suelto | Verificar conexiones físicas |
+| Error reportado ≠ SP - PV | Error de cálculo en software | Verificar orquestador Python |
+ 

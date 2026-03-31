@@ -1,0 +1,41 @@
+REGLAS DE CONTROL PID PARA EL ESTANQUE
+
+Ecuación del controlador PID:
+u(t) = Kp×e(t) + Ki×∫e(τ)dτ + Kd×de(t)/dt
+
+Donde:
+- u(t): Señal de control (% apertura válvula o potencia bomba, 0-100%)
+- e(t): Error = SP(t) - PV(t) = Setpoint - Nivel actual
+- Kp: Ganancia proporcional
+- Ki: Ganancia integral
+- Kd: Ganancia derivativa
+
+EFECTO DE CADA ACCIÓN:
+1. Proporcional (Kp):
+   - Kp alto → Respuesta rápida pero puede generar oscilaciones
+   - Kp bajo → Respuesta lenta, error de estado estacionario mayor
+   - DIAGNÓSTICO: Si hay oscilaciones sostenidas, Kp probablemente es excesivo
+
+2. Integral (Ki):
+   - Ki elimina el error de estado estacionario
+   - Ki alto → Puede causar sobretiro e inestabilidad (integral windup)
+   - Ki bajo → Error de estado estacionario persiste largo tiempo
+   - DIAGNÓSTICO: Si el error no converge a cero, Ki es insuficiente
+
+3. Derivativa (Kd):
+   - Kd anticipa cambios y amortigua oscilaciones
+   - Kd alto → Amplifica ruido del sensor
+   - Kd bajo → Poca capacidad de amortiguación
+   - DIAGNÓSTICO: Si el ruido en la señal de control es excesivo, Kd es muy alto
+
+CRITERIOS DE DESEMPEÑO:
+- Tiempo de establecimiento aceptable: < 3×τ (donde τ es la constante de tiempo)
+- Sobretiro máximo aceptable: < 20% del cambio de setpoint
+- Error de estado estacionario: debe converger a < 0.01 m
+- Sin oscilaciones sostenidas (sistema debe ser estable)
+
+NO LINEALIDAD DEL SISTEMA (TORRICELLI):
+- La ganancia del proceso cambia con el nivel
+- A nivel alto: ganancia mayor → el PID puede volverse inestable
+- A nivel bajo: ganancia menor → el PID responde más lento
+- Esto justifica la sintonía adaptativa asistida por el Gemelo Digital

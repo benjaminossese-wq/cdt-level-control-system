@@ -1,0 +1,26 @@
+PARÁMETROS DE LA PLANTA PILOTO - ESTANQUE 10 LITROS
+
+Geometría del estanque:
+- Tipo: Cilíndrico vertical, atmosférico (abierto)
+- Capacidad total: 10 litros (0.01 m³)
+- Área transversal constante (A): 0.02 m²
+- Diámetro aproximado: 16 cm
+- Altura máxima (h_max): 0.50 m
+
+Orificio de descarga:
+- Área de salida (a): 2×10⁻⁴ m²
+- Coeficiente de descarga (Cd): 0.6 (orificio pared delgada)
+- Tipo de válvula: bola o globo
+
+Constantes físicas:
+- Gravedad (g): 9.81 m/s²
+- Fluido: Agua a temperatura ambiente (densidad ρ ≈ 998 kg/m³)
+- Retardo de transporte (θ): 0.5 segundos
+
+Constante beta (β):
+β = Cd × a × √(2g) = 0.6 × 2×10⁻⁴ × √(19.62) = 5.31×10⁻⁴ m^(5/2)/s
+
+Punto de operación (h₀ = 0.25 m):
+- Resistencia hidráulica: R = 2×√h₀/β = 2×0.5/5.31×10⁻⁴ ≈ 1884.0 s/m²
+- Ganancia estática: K = R = 1884.0 s/m²
+- Constante de tiempo: τ = A×R = 0.02 × 1884.0 = 37.68 s

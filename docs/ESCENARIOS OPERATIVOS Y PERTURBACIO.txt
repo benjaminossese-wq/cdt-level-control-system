@@ -1,0 +1,46 @@
+ESCENARIOS OPERATIVOS Y PERTURBACIONES
+
+ESCENARIO 1: Operación normal
+- Setpoint: 0.25 m (50% capacidad)
+- Qin controlado por PID
+- Qout por gravedad (Torricelli)
+- Estado esperado: NORMAL
+- Acción: Monitoreo rutinario
+
+ESCENARIO 2: Cambio de setpoint (escalón)
+- Cambio de SP de 0.25 m a 0.35 m
+- El PID debe incrementar Qin para llenar
+- Respuesta transitoria esperada con posible sobretiro
+- Estado esperado: PRECAUCIÓN durante transitorio
+- Acción: Monitorear sobretiro y tiempo de establecimiento
+
+ESCENARIO 3: Perturbación en caudal de salida
+- Apertura repentina de válvula de descarga
+- Qout aumenta abruptamente
+- El nivel baja y el PID debe compensar aumentando Qin
+- Estado esperado: ALERTA si h cae bajo 0.10 m
+- Acción: Verificar que el PID compensa en tiempo razonable
+
+ESCENARIO 4: Falla de sensor (ruido excesivo)
+- Ruido en la medición del nivel > 5% del rango
+- La acción derivativa amplifica el ruido
+- Oscilaciones en la señal de control
+- Estado esperado: PRECAUCIÓN
+- Acción: Recomendar reducir Kd o aplicar filtro
+
+ESCENARIO 5: Nivel crítico alto
+- h > 0.45 m (90% capacidad)
+- Riesgo de desborde
+- Estado: ALERTA ALTA
+- Acción: Reducir Qin inmediatamente, verificar válvula de descarga
+
+ESCENARIO 6: Nivel crítico bajo
+- h < 0.05 m (10% capacidad)
+- Riesgo de cavitación en bomba
+- Estado: ALERTA ALTA
+- Acción: Aumentar Qin o reducir apertura de descarga
+
+UMBRALES DE ALARMA:
+- NORMAL: 0.10 m ≤ h ≤ 0.40 m
+- PRECAUCIÓN: 0.05 m ≤ h < 0.10 m  ó  0.40 m < h ≤ 0.45 m
+- ALERTA: h < 0.05 m  ó  h > 0.45 m
