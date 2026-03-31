@@ -1,0 +1,214 @@
+
+<style>
+  body { font-family: var(--font-sans); padding: 1rem 0; }
+  h2 { font-size: 15px; font-weight: 500; color: var(--color-text-primary); margin: 0 0 1rem; }
+  .legend { display: flex; gap: 16px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .leg { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-secondary); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: var(--color-background-secondary); color: var(--color-text-secondary); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 10px; text-align: left; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  td { padding: 10px 10px; vertical-align: top; border-bottom: 0.5px solid var(--color-border-tertiary); color: var(--color-text-primary); line-height: 1.5; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--color-background-secondary); }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+  .normal { background: #EAF3DE; color: #27500A; }
+  .precaucion { background: #FAEEDA; color: #633806; }
+  .alerta { background: #FCEBEB; color: #501313; }
+  .num { font-weight: 500; color: var(--color-text-secondary); font-size: 12px; }
+  .param { font-family: var(--font-mono); font-size: 11px; color: var(--color-text-secondary); background: var(--color-background-secondary); padding: 1px 5px; border-radius: 4px; display: inline-block; margin: 1px 0; }
+  ul { margin: 0; padding-left: 14px; }
+  ul li { margin-bottom: 2px; }
+</style>
+
+<h2>Escenarios de prueba — Gemelo Digital Cognitivo · Estanque PID</h2>
+
+<div class="legend">
+  <div class="leg"><div class="dot" style="background:#639922"></div>NORMAL</div>
+  <div class="leg"><div class="dot" style="background:#EF9F27"></div>PRECAUCIÓN</div>
+  <div class="leg"><div class="dot" style="background:#E24B4A"></div>ALERTA</div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Escenario</th>
+      <th>Cambios en Simulink</th>
+      <th>Comportamiento esperado</th>
+      <th>Qué debe detectar el LLM</th>
+      <th>Estado</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="num">1</td>
+      <td><strong>Operación normal</strong><br><span style="color:var(--color-text-secondary);font-size:12px;">Línea base</span></td>
+      <td>
+        <span class="param">SP = 0.25 m (constante)</span><br>
+        <span class="param">h(0) = 0 m</span><br>
+        <span class="param">Tsim = 300 s</span><br>
+        <span class="param">Ruido = 2.5e-7</span><br>
+        <span class="param">Kp=300, Ki=5, Kd=8</span><br>
+        Sin perturbaciones
+      </td>
+      <td>
+        <ul>
+          <li>Llenado suave 0→0.25 m</li>
+          <li>Estabilización antes de t=150 s</li>
+          <li>Error final &lt; 5 mm</li>
+          <li>Control entre 65–90%</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>Sistema estable, convergencia correcta</li>
+          <li>Sin saturación ni anomalías</li>
+          <li>Confirmar settling time dentro de 4τ</li>
+          <li>Validar Qin ≈ Qout en estado estacionario</li>
+        </ul>
+      </td>
+      <td><span class="badge normal">NORMAL</span></td>
+    </tr>
+    <tr>
+      <td class="num">2</td>
+      <td><strong>Cambio de setpoint</strong><br><span style="color:var(--color-text-secondary);font-size:12px;">Escalón SP</span></td>
+      <td>
+        <span class="param">SP: Step 0.25→0.35 m en t=150s</span><br>
+        <span class="param">h(0) = 0.25 m</span><br>
+        <span class="param">Tsim = 400 s</span><br>
+        <span class="param">Ruido = 2.5e-7</span><br>
+        Sin perturbaciones
+      </td>
+      <td>
+        <ul>
+          <li>Estable en 0.25 m durante 0–150 s</li>
+          <li>Transitorio hacia 0.35 m con posible overshoot</li>
+          <li>Nuevo estado estacionario en 0.35 m</li>
+          <li>Control sube bruscamente en t=150 s</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>Detectar cambio de referencia en t≈150 s</li>
+          <li>Evaluar magnitud y duración del transitorio</li>
+          <li>Medir overshoot (si &gt;20% → alerta)</li>
+          <li>Confirmar nueva estabilización</li>
+        </ul>
+      </td>
+      <td><span class="badge precaucion">PRECAUCIÓN</span></td>
+    </tr>
+    <tr>
+      <td class="num">3</td>
+      <td><strong>Perturbación Qout</strong><br><span style="color:var(--color-text-secondary);font-size:12px;">Válvula descarga</span></td>
+      <td>
+        <span class="param">SP = 0.25 m (constante)</span><br>
+        <span class="param">h(0) = 0.25 m</span><br>
+        <span class="param">Tsim = 400 s</span><br>
+        <span class="param">Ruido = 2.5e-7</span><br>
+        <span class="param">En t=150s: a_total = a×2</span><br>
+        (Step de 0→1 multiplicando área)
+      </td>
+      <td>
+        <ul>
+          <li>Estable en 0.25 m hasta t=150 s</li>
+          <li>Caída brusca del nivel al duplicar Qout</li>
+          <li>PID intenta compensar aumentando Qin</li>
+          <li>Posible error estacionario si bomba satura</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>Detectar caída brusca de nivel en t≈150 s</li>
+          <li>Identificar desbalance Qin/Qout</li>
+          <li>Detectar si control llega a saturación (100%)</li>
+          <li>Evaluar si el sistema recupera el SP o queda con offset</li>
+        </ul>
+      </td>
+      <td><span class="badge alerta">ALERTA</span></td>
+    </tr>
+    <tr>
+      <td class="num">4</td>
+      <td><strong>Ruido excesivo sensor</strong><br><span style="color:var(--color-text-secondary);font-size:12px;">Sensor degradado</span></td>
+      <td>
+        <span class="param">SP = 0.25 m (constante)</span><br>
+        <span class="param">h(0) = 0.25 m</span><br>
+        <span class="param">Tsim = 300 s</span><br>
+        <span class="param">Ruido = 2.5e-5 (10× normal)</span><br>
+        Sin perturbaciones
+      </td>
+      <td>
+        <ul>
+          <li>Nivel oscila visiblemente alrededor de 0.25 m</li>
+          <li>Señal de control muy ruidosa (Kd amplifica)</li>
+          <li>Error promedio bajo pero varianza alta</li>
+          <li>Std del nivel notablemente mayor que escenario 1</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>Detectar alta varianza en nivel y control</li>
+          <li>Comparar std vs escenario 1 (línea base)</li>
+          <li>Recomendar reducir Kd o agregar filtro</li>
+          <li>Identificar origen en sensor, no en proceso</li>
+        </ul>
+      </td>
+      <td><span class="badge precaucion">PRECAUCIÓN</span></td>
+    </tr>
+    <tr>
+      <td class="num">5</td>
+      <td><strong>Nivel crítico alto</strong><br><span style="color:var(--color-text-secondary);font-size:12px;">Riesgo desborde</span></td>
+      <td>
+        <span class="param">SP: Step 0.25→0.45 m en t=100s</span><br>
+        <span class="param">h(0) = 0.25 m</span><br>
+        <span class="param">Tsim = 400 s</span><br>
+        <span class="param">Ruido = 2.5e-7</span><br>
+        Sin perturbaciones
+      </td>
+      <td>
+        <ul>
+          <li>Nivel sube de 0.25 m hacia 0.45 m (90% capacidad)</li>
+          <li>Posible overshoot superando 0.45 m momentáneamente</li>
+          <li>Control al máximo durante el transitorio</li>
+          <li>Zona de operación peligrosa sostenida</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>PRECAUCIÓN al superar h=0.40 m (80% capacidad)</li>
+          <li>ALERTA al superar h=0.45 m (90% capacidad)</li>
+          <li>Recomendar reducir SP o activar válvula de alivio</li>
+          <li>Detectar riesgo de desborde si hay overshoot</li>
+        </ul>
+      </td>
+      <td><span class="badge alerta">ALERTA</span></td>
+    </tr>
+    <tr>
+      <td class="num">6</td>
+      <td><strong>Nivel crítico bajo</strong><br><span style="color:var(--color-text-secondary);font-size:12px;">Riesgo cavitación</span></td>
+      <td>
+        <span class="param">SP: Step 0.25→0.03 m en t=100s</span><br>
+        <span class="param">h(0) = 0.25 m</span><br>
+        <span class="param">Tsim = 400 s</span><br>
+        <span class="param">Ruido = 2.5e-7</span><br>
+        Sin perturbaciones
+      </td>
+      <td>
+        <ul>
+          <li>Nivel baja de 0.25 m hacia 0.03 m</li>
+          <li>Ganancia del proceso cae drásticamente (Torricelli: Qout∝√h)</li>
+          <li>PID puede volverse inestable o muy lento a h bajo</li>
+          <li>Control puede oscilar o saturarse en 0%</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>ALERTA por riesgo de cavitación en bomba</li>
+          <li>Detectar cambio de dinámica del proceso (no linealidad)</li>
+          <li>Identificar que el PID está dessintonizado para h bajo</li>
+          <li>Recomendar sintonía adaptativa o control por zonas</li>
+        </ul>
+      </td>
+      <td><span class="badge alerta">ALERTA</span></td>
+    </tr>
+  </tbody>
+</table>
